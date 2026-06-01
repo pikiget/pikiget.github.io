@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>pikiget · Roy Paul Ochoa</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0f;
+      --bg2: #111118;
+      --accent: #00ff9d;
+      --accent2: #ff3f6c;
+      --text: #e8e8f0;
+      --muted: #5a5a72;
+      --border: #1e1e2e;
+      --card: #13131e;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Space Mono', monospace;
+      overflow-x: hidden;
+      cursor: none;
+    }
+
+    /* CURSOR */
+    .cursor {
+      width: 10px; height: 10px;
+      background: var(--accent);
+      border-radius: 50%;
+      position: fixed;
+      top: 0; left: 0;
+      pointer-events: none;
+      z-index: 9999;
+      transition: transform 0.15s ease, background 0.2s;
+      mix-blend-mode: difference;
+    }
+    .cursor-ring {
+      width: 36px; height: 36px;
+      border: 1.5px solid var(--accent);
+      border-radius: 50%;
+      position: fixed;
+      top: 0; left: 0;
+      pointer-events: none;
+      z-index: 9998;
+      transition: transform 0.35s cubic-bezier(.23,1,.32,1), opacity 0.2s;
+      opacity: 0.5;
+    }
+
+    /* NOISE OVERLAY */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 9000;
+      opacity: 0.35;
+    }
+
+    /* GRID LINES */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(0,255,157,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,255,157,0.03) 1px, transparent 1px);
+      background-size: 60px 60px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* NAV */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.4rem 3rem;
+      border-bottom: 1px solid var(--border);
+      background: rgba(10,10,15,0.85);
+      backdrop-filter: blur(12px);
+    }
+    .nav-logo {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.1rem;
+      color: var(--accent);
+      letter-spacing: -0.02em;
+    }
+    .nav-logo span { color: var(--muted); font-weight: 400; }
+    .nav-links { display: flex; gap: 2rem; list-style: none; }
+    .nav-links a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.7rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--accent); }
+
+    /* SECTIONS */
+    section { position: relative; z-index: 1; }
+
+    /* HERO */
+    #hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      padding: 8rem 3rem 4rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero-glow {
+      position: absolute;
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, rgba(0,255,157,0.08) 0%, transparent 70%);
+      top: -100px; right: -100px;
+      pointer-events: none;
+      animation: pulse 6s ease-in-out infinite;
+    }
+    .hero-glow2 {
+      position: absolute;
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, rgba(255,63,108,0.06) 0%, transparent 70%);
+      bottom: 0; left: -80px;
+      pointer-events: none;
+      animation: pulse 8s ease-in-out infinite reverse;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.1); opacity: 0.7; }
+    }
+    .hero-content { max-width: 900px; }
+    .hero-tag {
+      display: inline-block;
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--accent);
+      border: 1px solid var(--accent);
+      padding: 0.3rem 0.8rem;
+      margin-bottom: 2rem;
+      opacity: 0;
+      animation: fadeUp 0.6s ease forwards 0.2s;
+    }
+    .hero-name {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: clamp(3.5rem, 8vw, 7rem);
+      line-height: 0.95;
+      letter-spacing: -0.04em;
+      opacity: 0;
+      animation: fadeUp 0.7s ease forwards 0.4s;
+    }
+    .hero-name .line2 {
+      color: transparent;
+      -webkit-text-stroke: 1px var(--muted);
+    }
+    .hero-desc {
+      margin-top: 2rem;
+      font-size: 0.85rem;
+      line-height: 1.8;
+      color: var(--muted);
+      max-width: 480px;
+      opacity: 0;
+      animation: fadeUp 0.7s ease forwards 0.6s;
+    }
+    .hero-desc span { color: var(--text); }
+    .hero-cta {
+      display: flex;
+      gap: 1rem;
+      margin-top: 2.5rem;
+      flex-wrap: wrap;
+      opacity: 0;
+      animation: fadeUp 0.7s ease forwards 0.8s;
+    }
+    .btn {
+      display: inline-block;
+      padding: 0.8rem 1.8rem;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      text-decoration: none;
+      border: 1px solid;
+      transition: all 0.25s;
+      cursor: none;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: var(--bg);
+      border-color: var(--accent);
+    }
+    .btn-primary:hover {
+      background: transparent;
+      color: var(--accent);
+    }
+    .btn-secondary {
+      background: transparent;
+      color: var(--text);
+      border-color: var(--border);
+    }
+    .btn-secondary:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .hero-scroll {
+      position: absolute;
+      bottom: 2rem; left: 3rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      opacity: 0;
+      animation: fadeUp 0.7s ease forwards 1.2s;
+    }
+    .scroll-line {
+      width: 40px; height: 1px;
+      background: var(--muted);
+      position: relative;
+      overflow: hidden;
+    }
+    .scroll-line::after {
+      content: '';
+      position: absolute;
+      top: 0; left: -100%;
+      width: 100%; height: 100%;
+      background: var(--accent);
+      animation: slideLine 2s ease-in-out infinite;
+    }
+    @keyframes slideLine {
+      0% { left: -100%; }
+      100% { left: 100%; }
+    }
+    .scroll-text {
+      font-size: 0.6rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ABOUT / SKILLS */
+    #skills {
+      padding: 6rem 3rem;
+      border-top: 1px solid var(--border);
+    }
+    .section-label {
+      font-size: 0.6rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.8rem;
+    }
+    .section-title {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: clamp(2rem, 4vw, 3.5rem);
+      letter-spacing: -0.03em;
+      margin-bottom: 3rem;
+    }
+    .skills-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+    }
+    .skill-card {
+      background: var(--card);
+      padding: 2rem;
+      transition: background 0.25s;
+    }
+    .skill-card:hover { background: var(--bg2); }
+    .skill-cat {
+      font-size: 0.6rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 1rem;
+    }
+    .skill-items { display: flex; flex-direction: column; gap: 0.5rem; }
+    .skill-item {
+      font-size: 0.8rem;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: color 0.2s;
+    }
+    .skill-card:hover .skill-item { color: var(--text); }
+    .skill-dot {
+      width: 4px; height: 4px;
+      background: var(--accent);
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* PROJECTS */
+    #projects {
+      padding: 6rem 3rem;
+      border-top: 1px solid var(--border);
+    }
+    .projects-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      margin-top: 1rem;
+    }
+    .project-card {
+      background: var(--card);
+      padding: 2.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      transition: background 0.25s;
+      position: relative;
+      overflow: hidden;
+    }
+    .project-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 3px; height: 0;
+      background: var(--accent);
+      transition: height 0.3s ease;
+    }
+    .project-card:hover::before { height: 100%; }
+    .project-card:hover { background: var(--bg2); }
+    .project-number {
+      font-size: 0.6rem;
+      letter-spacing: 0.2em;
+      color: var(--muted);
+    }
+    .project-name {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 1.3rem;
+      letter-spacing: -0.02em;
+      transition: color 0.2s;
+    }
+    .project-card:hover .project-name { color: var(--accent); }
+    .project-desc {
+      font-size: 0.75rem;
+      line-height: 1.7;
+      color: var(--muted);
+      flex: 1;
+    }
+    .project-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+    .tag {
+      font-size: 0.6rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 0.25rem 0.6rem;
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+    .project-links {
+      display: flex;
+      gap: 1rem;
+      margin-top: 0.5rem;
+    }
+    .project-link {
+      font-size: 0.65rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: color 0.2s;
+    }
+    .project-link:hover { color: var(--accent); }
+    .project-link svg { width: 12px; height: 12px; }
+
+    /* FEATURED PROJECT */
+    .project-featured {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--accent);
+      margin-bottom: 0;
+    }
+    .featured-left {
+      background: var(--card);
+      padding: 3rem;
+    }
+    .featured-right {
+      background: var(--bg2);
+      padding: 3rem;
+      display: flex;
+      align-items: center;
+    }
+    .badge-live {
+      display: inline-block;
+      font-size: 0.6rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--accent);
+      border: 1px solid var(--accent);
+      padding: 0.3rem 0.7rem;
+      animation: badgePulse 2s ease-in-out infinite;
+    }
+    @keyframes badgePulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+    .featured-modules {
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+      width: 100%;
+    }
+    .module-item {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      font-size: 0.75rem;
+      color: var(--muted);
+      padding-bottom: 0.8rem;
+      border-bottom: 1px solid var(--border);
+      transition: color 0.2s;
+    }
+    .module-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .featured-left:hover ~ .featured-right .module-item,
+    .featured-right:hover .module-item { color: var(--text); }
+    .module-dot {
+      width: 5px; height: 5px;
+      background: var(--accent);
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    @media (max-width: 768px) {
+      .project-featured { grid-template-columns: 1fr; }
+      .featured-left, .featured-right { padding: 2rem 1.5rem; }
+    }
+
+    /* CONTACT */
+    #contact {
+      padding: 6rem 3rem;
+      border-top: 1px solid var(--border);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4rem;
+      align-items: center;
+    }
+    .contact-big {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: clamp(2.5rem, 5vw, 5rem);
+      letter-spacing: -0.04em;
+      line-height: 1;
+    }
+    .contact-big .accent { color: var(--accent); }
+    .contact-links { display: flex; flex-direction: column; gap: 1.5rem; }
+    .contact-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .contact-item:last-child { border-bottom: none; }
+    .contact-label {
+      font-size: 0.6rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .contact-val {
+      font-size: 0.9rem;
+      color: var(--text);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .contact-val:hover { color: var(--accent); }
+
+    /* FOOTER */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 1.5rem 3rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: relative;
+      z-index: 1;
+    }
+    .footer-copy {
+      font-size: 0.65rem;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+    }
+    .footer-status {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.65rem;
+      color: var(--accent);
+      letter-spacing: 0.1em;
+    }
+    .status-dot {
+      width: 6px; height: 6px;
+      background: var(--accent);
+      border-radius: 50%;
+      animation: blink 2s ease-in-out infinite;
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.2; }
+    }
+
+    /* RESPONSIVE */
+    @media (max-width: 768px) {
+      nav { padding: 1.2rem 1.5rem; }
+      .nav-links { display: none; }
+      #hero { padding: 6rem 1.5rem 3rem; }
+      #skills, #projects { padding: 4rem 1.5rem; }
+      #contact { grid-template-columns: 1fr; padding: 4rem 1.5rem; gap: 2rem; }
+      footer { padding: 1.5rem; flex-direction: column; gap: 0.5rem; text-align: center; }
+      .hero-scroll { left: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="cursor" id="cursor"></div>
+  <div class="cursor-ring" id="cursorRing"></div>
+
+  <!-- NAV -->
+  <nav>
+    <div class="nav-logo">pikiget<span>.dev</span></div>
+    <ul class="nav-links">
+      <li><a href="#skills">Skills</a></li>
+      <li><a href="#projects">Proyectos</a></li>
+      <li><a href="#contact">Contacto</a></li>
+    </ul>
+  </nav>
+
+  <!-- HERO -->
+  <section id="hero">
+    <div class="hero-glow"></div>
+    <div class="hero-glow2"></div>
+    <div class="hero-content">
+      <div class="hero-tag">Disponible para trabajar</div>
+      <h1 class="hero-name">
+        Roy Paul<br>
+        <span class="line2">Ochoa.</span>
+      </h1>
+      <p class="hero-desc">
+        <span>Full Stack Developer Junior</span> — construyo aplicaciones web y móviles con Java Spring Boot, MySQL y Swift. Estudiante de Computación e Informática en <span>CIBERTEC</span>, Lima.
+      </p>
+      <div class="hero-cta">
+        <a href="#projects" class="btn btn-primary">Ver proyectos</a>
+        <a href="#contact" class="btn btn-secondary">Contacto</a>
+      </div>
+    </div>
+    <div class="hero-scroll">
+      <div class="scroll-line"></div>
+      <span class="scroll-text">Scroll</span>
+    </div>
+  </section>
+
+  <!-- SKILLS -->
+  <section id="skills">
+    <p class="section-label">// Stack técnico</p>
+    <h2 class="section-title">Tecnologías</h2>
+    <div class="skills-grid">
+      <div class="skill-card">
+        <div class="skill-cat">Backend</div>
+        <div class="skill-items">
+          <div class="skill-item"><span class="skill-dot"></span>Java</div>
+          <div class="skill-item"><span class="skill-dot"></span>Spring Boot</div>
+          <div class="skill-item"><span class="skill-dot"></span>REST APIs</div>
+          <div class="skill-item"><span class="skill-dot"></span>Maven</div>
+        </div>
+      </div>
+      <div class="skill-card">
+        <div class="skill-cat">Base de Datos</div>
+        <div class="skill-items">
+          <div class="skill-item"><span class="skill-dot"></span>MySQL</div>
+          <div class="skill-item"><span class="skill-dot"></span>JPA / Hibernate</div>
+          <div class="skill-item"><span class="skill-dot"></span>SQL</div>
+        </div>
+      </div>
+      <div class="skill-card">
+        <div class="skill-cat">Frontend</div>
+        <div class="skill-items">
+          <div class="skill-item"><span class="skill-dot"></span>React</div>
+          <div class="skill-item"><span class="skill-dot"></span>TypeScript</div>
+          <div class="skill-item"><span class="skill-dot"></span>HTML / CSS</div>
+          <div class="skill-item"><span class="skill-dot"></span>JavaScript</div>
+          <div class="skill-item"><span class="skill-dot"></span>Thymeleaf</div>
+          <div class="skill-item"><span class="skill-dot"></span>Vite</div>
+        </div>
+      </div>
+      <div class="skill-card">
+        <div class="skill-cat">Mobile</div>
+        <div class="skill-items">
+          <div class="skill-item"><span class="skill-dot"></span>Swift</div>
+          <div class="skill-item"><span class="skill-dot"></span>UIKit</div>
+          <div class="skill-item"><span class="skill-dot"></span>CoreData</div>
+          <div class="skill-item"><span class="skill-dot"></span>iOS Development</div>
+        </div>
+      </div>
+      <div class="skill-card">
+        <div class="skill-cat">Herramientas</div>
+        <div class="skill-items">
+          <div class="skill-item"><span class="skill-dot"></span>Git / GitHub</div>
+          <div class="skill-item"><span class="skill-dot"></span>IntelliJ IDEA</div>
+          <div class="skill-item"><span class="skill-dot"></span>Xcode</div>
+          <div class="skill-item"><span class="skill-dot"></span>Docker (básico)</div>
+        </div>
+      </div>
+      <div class="skill-card">
+        <div class="skill-cat">Metodologías</div>
+        <div class="skill-items">
+          <div class="skill-item"><span class="skill-dot"></span>Scrum / Agile</div>
+          <div class="skill-item"><span class="skill-dot"></span>MVC</div>
+          <div class="skill-item"><span class="skill-dot"></span>RESTful Design</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROJECTS -->
+  <section id="projects">
+    <p class="section-label">// Trabajo</p>
+    <h2 class="section-title">Proyectos</h2>
+
+    <!-- FEATURED -->
+    <div class="project-featured">
+      <div class="featured-left">
+        <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem">
+          <span class="badge-live">● EN PRODUCCIÓN</span>
+          <span class="project-number">01</span>
+        </div>
+        <div class="project-name" style="font-size:clamp(1.6rem,3vw,2.2rem)">Plataforma de Capacitaciones</div>
+        <p class="project-desc" style="margin-top:1rem;max-width:520px">
+          Sistema empresarial de gestión de capacitaciones desplegado y en uso real. Portal de alumnos, panel de administración, cursos SCORM, generación automática de certificados PDF, dashboard con KPIs, matrícula masiva vía Excel, gestión documental con OCR, notificaciones por email y SMS, seguimiento de llamadas y autenticación OAuth2/OIDC.
+        </p>
+        <div class="project-tags" style="margin-top:1.5rem">
+          <span class="tag">Spring Boot</span>
+          <span class="tag">MySQL</span>
+          <span class="tag">Thymeleaf</span>
+          <span class="tag">Spring Security</span>
+          <span class="tag">SCORM</span>
+          <span class="tag">iText PDF</span>
+          <span class="tag">SendGrid</span>
+          <span class="tag">SSE</span>
+          <span class="tag">OAuth2 / OIDC</span>
+        </div>
+        <div class="project-links" style="margin-top:1.5rem">
+          <a href="https://alamocapacitaciones.com" target="_blank" class="project-link">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            alamocapacitaciones.com
+          </a>
+          <a href="https://github.com/pikiget/alamo-capacitaciones" target="_blank" class="project-link">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+            GitHub
+          </a>
+        </div>
+      </div>
+      <div class="featured-right">
+        <div class="featured-modules">
+          <div class="module-item"><span class="module-dot"></span>Portal del alumno</div>
+          <div class="module-item"><span class="module-dot"></span>Panel de administración</div>
+          <div class="module-item"><span class="module-dot"></span>Cursos SCORM</div>
+          <div class="module-item"><span class="module-dot"></span>Certificados PDF automáticos</div>
+          <div class="module-item"><span class="module-dot"></span>Dashboard con KPIs</div>
+          <div class="module-item"><span class="module-dot"></span>Importación masiva Excel</div>
+          <div class="module-item"><span class="module-dot"></span>OCR de documentos</div>
+          <div class="module-item"><span class="module-dot"></span>Email &amp; SMS automáticos</div>
+          <div class="module-item"><span class="module-dot"></span>Seguimiento de llamadas</div>
+          <div class="module-item"><span class="module-dot"></span>OAuth2 / OIDC Auth</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="project-featured" style="margin-top:1px">
+      <div class="featured-left">
+        <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem">
+          <span class="badge-live">● EN PRODUCCIÓN</span>
+          <span class="project-number">02</span>
+        </div>
+        <div class="project-name" style="font-size:clamp(1.6rem,3vw,2.2rem)">Sistema ÁLAMO — RRHH &amp; Almacén</div>
+        <p class="project-desc" style="margin-top:1rem;max-width:520px">
+          Plataforma interna empresarial con dos módulos principales. RRHH: gestión de asistencia, agenda, tareas con calendario, reportes y administración de usuarios. Almacén: inventario, activos asignados, movimientos y gestión contable. Backend en Spring Boot con Clean Architecture y frontend en React + TypeScript.
+        </p>
+        <div class="project-tags" style="margin-top:1.5rem">
+          <span class="tag">Spring Boot</span>
+          <span class="tag">React</span>
+          <span class="tag">TypeScript</span>
+          <span class="tag">Vite</span>
+          <span class="tag">MySQL</span>
+          <span class="tag">Clean Architecture</span>
+          <span class="tag">REST API</span>
+          <span class="tag">Spring Security</span>
+          <span class="tag">SendGrid</span>
+        </div>
+        <div class="project-links" style="margin-top:1.5rem">
+          <a href="https://github.com/pikiget/alamo-rrhh-alm" target="_blank" class="project-link">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+            GitHub
+          </a>
+        </div>
+      </div>
+      <div class="featured-right">
+        <div class="featured-modules">
+          <div class="module-item" style="color:var(--accent);font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;border-bottom:1px solid var(--border);padding-bottom:0.8rem">Módulo RRHH</div>
+          <div class="module-item"><span class="module-dot"></span>Dashboard general</div>
+          <div class="module-item"><span class="module-dot"></span>Control de asistencia</div>
+          <div class="module-item"><span class="module-dot"></span>Agenda y reuniones</div>
+          <div class="module-item"><span class="module-dot"></span>Gestión de tareas (Kanban + Calendario)</div>
+          <div class="module-item"><span class="module-dot"></span>Reportes exportables</div>
+          <div class="module-item" style="color:var(--accent);font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;border-bottom:1px solid var(--border);padding-bottom:0.8rem;padding-top:0.4rem">Módulo Almacén</div>
+          <div class="module-item"><span class="module-dot"></span>Inventario de bienes y servicios</div>
+          <div class="module-item"><span class="module-dot"></span>Activos asignados</div>
+          <div class="module-item"><span class="module-dot"></span>Movimientos</div>
+          <div class="module-item"><span class="module-dot"></span>Gestión contable</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="project-featured" style="margin-top:1px">
+      <div class="featured-left">
+        <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem">
+          <span class="badge-live">● EN PRODUCCIÓN</span>
+          <span class="project-number">03</span>
+        </div>
+        <div class="project-name" style="font-size:clamp(1.6rem,3vw,2.2rem)">Maxi Hair Style</div>
+        <p class="project-desc" style="margin-top:1rem;max-width:520px">
+          Plataforma completa para salón de belleza y spa con dominio propio en producción. Portal público con tienda online, catálogo de servicios, reserva de citas, carrito de compras, cupones de descuento e integración con WhatsApp. Panel de administración independiente con dashboard, gestión de especialistas, productos, pedidos, tickets y subida de imágenes.
+        </p>
+        <div class="project-tags" style="margin-top:1.5rem">
+          <span class="tag">Spring Boot</span>
+          <span class="tag">MySQL</span>
+          <span class="tag">HTML/CSS/JS</span>
+          <span class="tag">REST API</span>
+          <span class="tag">Spring Security</span>
+          <span class="tag">JWT</span>
+          <span class="tag">WhatsApp API</span>
+        </div>
+        <div class="project-links" style="margin-top:1.5rem">
+          <a href="https://maxihairstyle.com" target="_blank" class="project-link">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            maxihairstyle.com
+          </a>
+          <a href="https://github.com/pikiget/maxi-hair-style" target="_blank" class="project-link">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+            GitHub
+          </a>
+        </div>
+      </div>
+      <div class="featured-right">
+        <div class="featured-modules">
+          <div class="module-item" style="color:var(--accent);font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;border-bottom:1px solid var(--border);padding-bottom:0.8rem">Portal Público</div>
+          <div class="module-item"><span class="module-dot"></span>Tienda online con carrito</div>
+          <div class="module-item"><span class="module-dot"></span>Reserva de citas online</div>
+          <div class="module-item"><span class="module-dot"></span>Catálogo de servicios y especialistas</div>
+          <div class="module-item"><span class="module-dot"></span>Cupones de descuento</div>
+          <div class="module-item"><span class="module-dot"></span>Integración WhatsApp</div>
+          <div class="module-item" style="color:var(--accent);font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;border-bottom:1px solid var(--border);padding-bottom:0.8rem;padding-top:0.4rem">Panel Admin</div>
+          <div class="module-item"><span class="module-dot"></span>Dashboard y reportes</div>
+          <div class="module-item"><span class="module-dot"></span>Gestión de pedidos y tickets</div>
+          <div class="module-item"><span class="module-dot"></span>Control de stock</div>
+          <div class="module-item"><span class="module-dot"></span>Subida de imágenes</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="project-featured" style="margin-top:1px">
+      <div class="featured-left">
+        <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem">
+          <span class="badge-live">● EN PRODUCCIÓN</span>
+          <span class="project-number">04</span>
+        </div>
+        <div class="project-name" style="font-size:clamp(1.6rem,3vw,2.2rem)">YACHAYNI — Plataforma de Cursos</div>
+        <p class="project-desc" style="margin-top:1rem;max-width:520px">
+          Plataforma educativa online con dominio propio y base de datos en producción. Institución de formación técnica orientada al campo laboral en construcción, instalaciones y gestión. Incluye catálogo de cursos con precios, clases en vivo, certificación, noticias, eventos con inscripción y sistema de comentarios. Panel de administración para gestión de todo el contenido.
+        </p>
+        <div class="project-tags" style="margin-top:1.5rem">
+          <span class="tag">Spring Boot</span>
+          <span class="tag">Thymeleaf</span>
+          <span class="tag">MySQL</span>
+          <span class="tag">HTML/CSS/JS</span>
+          <span class="tag">Spring Security</span>
+          <span class="tag">REST API</span>
+        </div>
+        <div class="project-links" style="margin-top:1.5rem">
+          <a href="https://yachayni.com" target="_blank" class="project-link">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            yachayni.com
+          </a>
+          <a href="https://github.com/pikiget/yachayni-platform" target="_blank" class="project-link">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+            GitHub
+          </a>
+        </div>
+      </div>
+      <div class="featured-right">
+        <div class="featured-modules">
+          <div class="module-item" style="color:var(--accent);font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;border-bottom:1px solid var(--border);padding-bottom:0.8rem">Landing Pública</div>
+          <div class="module-item"><span class="module-dot"></span>Catálogo de cursos con precios</div>
+          <div class="module-item"><span class="module-dot"></span>Detalle de curso con secciones y sesiones</div>
+          <div class="module-item"><span class="module-dot"></span>Clases en vivo + certificación</div>
+          <div class="module-item"><span class="module-dot"></span>Noticias y blog</div>
+          <div class="module-item"><span class="module-dot"></span>Eventos con inscripción</div>
+          <div class="module-item"><span class="module-dot"></span>Sistema de comentarios</div>
+          <div class="module-item" style="color:var(--accent);font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;border-bottom:1px solid var(--border);padding-bottom:0.8rem;padding-top:0.4rem">Panel Admin</div>
+          <div class="module-item"><span class="module-dot"></span>Gestión de cursos, profesores y usuarios</div>
+          <div class="module-item"><span class="module-dot"></span>Moderación de comentarios</div>
+          <div class="module-item"><span class="module-dot"></span>Administración de noticias y eventos</div>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+
+
+  <!-- CONTACT -->
+  <section id="contact">
+    <div>
+      <p class="section-label">// Hablemos</p>
+      <h2 class="contact-big">¿Tienes un<br>proyecto<span class="accent">?</span></h2>
+    </div>
+    <div class="contact-links">
+      <div class="contact-item">
+        <span class="contact-label">Email</span>
+        <a href="mailto:ochoaalmonacidr@gmail.com" class="contact-val">ochoaalmonacidr@gmail.com</a>
+      </div>
+      <div class="contact-item">
+        <span class="contact-label">GitHub</span>
+        <a href="https://github.com/pikiget" target="_blank" class="contact-val">github.com/pikiget</a>
+      </div>
+      <div class="contact-item">
+        <span class="contact-label">Ubicación</span>
+        <span class="contact-val">Lima, Perú</span>
+      </div>
+      <div class="contact-item">
+        <span class="contact-label">Disponibilidad</span>
+        <span class="contact-val" style="color: var(--accent);">Abierto a oportunidades</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <span class="footer-copy">© 2025 Roy Paul Ochoa · pikiget</span>
+    <div class="footer-status">
+      <div class="status-dot"></div>
+      disponible
+    </div>
+  </footer>
+
+  <script>
+    // Custom cursor
+    const cursor = document.getElementById('cursor');
+    const ring = document.getElementById('cursorRing');
+    let mx = 0, my = 0, rx = 0, ry = 0;
+
+    document.addEventListener('mousemove', e => {
+      mx = e.clientX; my = e.clientY;
+      cursor.style.transform = `translate(${mx - 5}px, ${my - 5}px)`;
+    });
+
+    function animateRing() {
+      rx += (mx - rx) * 0.12;
+      ry += (my - ry) * 0.12;
+      ring.style.transform = `translate(${rx - 18}px, ${ry - 18}px)`;
+      requestAnimationFrame(animateRing);
+    }
+    animateRing();
+
+    // Hover effect on links
+    document.querySelectorAll('a, button, .btn').forEach(el => {
+      el.addEventListener('mouseenter', () => {
+        cursor.style.transform += ' scale(2)';
+        ring.style.opacity = '0.8';
+        ring.style.transform += ' scale(1.5)';
+      });
+      el.addEventListener('mouseleave', () => {
+        ring.style.opacity = '0.5';
+      });
+    });
+
+    // Scroll reveal
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.style.opacity = '1';
+          entry.target.style.transform = 'translateY(0)';
+        }
+      });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.skill-card, .project-card, .featured-left, .featured-right').forEach(el => {
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(20px)';
+      el.style.transition = 'opacity 0.5s ease, transform 0.5s ease, background 0.25s';
+      observer.observe(el);
+    });
+  </script>
+</body>
+</html>
